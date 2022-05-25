@@ -1,0 +1,57 @@
+version: '3.3'
+
+services:
+
+  mongodb: 
+    container_name: mongodb
+    image: mongo:latest
+    env_file:
+      - .env
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${DB_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASS}
+    volumes:
+      - mongodata:/data/db
+      - mongodata:/data/configdb
+    restart: unless-stopped
+    command: mongod --quiet --logpath /dev/null
+    ports:
+      - "${MONGO_PORT}:27017"
+
+  mysql:
+    container_name: mysql
+    image: mysql:latest
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASS}
+      MYSQL_DATABASE: ${DEFAULT_DB}
+    volumes:
+      - mysqldata:/var/lib/mysql
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+    ports:
+      - "${MYSQL_PORT}:3306"
+  
+  phpmyadmin:
+    container_name: phpmyadmin
+    image: phpmyadmin:latest
+    env_file:
+      - .env
+    environment:
+      PMA_USER: ${DB_USER}
+      PMA_PASSWORD: ${DB_PASS}
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_ARBITRARY: 1
+    restart: unless-stopped
+    links:
+      - mysql
+    ports:
+      - 8080:80
+
+volumes:
+  mongodata:
+  mysqldata:
