@@ -3,8 +3,9 @@
 A simple Docker Compose File that auto-generates and configures different databases:
 
 - `mysql` ( persistent data )
-- `mongodb` ( persistent data )
 - `phpmyadmin` ( defaults to mysql )
+- `postgresql` ( persistent data )
+- `pgadmin` ( defaults to postgresql )
 
 Any extra databases may be added in the future.
 

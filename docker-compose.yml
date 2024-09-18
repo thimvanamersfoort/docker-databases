@@ -1,39 +1,25 @@
-version: '3.3'
-
 services:
-
-  mongodb: 
-    container_name: mongodb
-    image: mongo:latest
-    env_file:
-      - .env
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${DB_USER}
-      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASS}
-    volumes:
-      - mongodata:/data/db
-      - mongodata:/data/configdb
-    restart: unless-stopped
-    command: mongod --quiet --logpath /dev/null
-    ports:
-      - "${MONGO_PORT}:27017"
 
   mysql:
     container_name: mysql
-    image: mysql:latest
+    image: mysql:8.4.2
     env_file:
       - .env
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PASS}
-      MYSQL_DATABASE: ${DEFAULT_DB}
+      MYSQL_USER: ${MYSQL_DB_USER}
+      MYSQL_PASSWORD: ${MYSQL_DB_PASS}
     volumes:
-      - mysqldata:/var/lib/mysql
-    restart: unless-stopped
-    command: --default-authentication-plugin=mysql_native_password
+      - mysql_data:/var/lib/mysql
+    # restart: unless-stopped
+    command: --upgrade=FORCE
     ports:
       - "${MYSQL_PORT}:3306"
+    # healthcheck:
+    #   test: ["CMD-SHELL", "mysqladmin ping -h localhost"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 5
   
   phpmyadmin:
     container_name: phpmyadmin
@@ -41,17 +27,49 @@ services:
     env_file:
       - .env
     environment:
-      PMA_USER: ${DB_USER}
-      PMA_PASSWORD: ${DB_PASS}
+      PMA_USER: root
+      PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       PMA_HOST: mysql
-      PMA_PORT: 3306
+      PMA_PORT: ${MYSQL_PORT}
       PMA_ARBITRARY: 1
     restart: unless-stopped
     links:
       - mysql
     ports:
-      - 8080:80
+      - ${PHPMYADMIN_PORT}:80
+
+  postgres:
+    container_name: postgres
+    image: postgres:latest
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${PG_DB_USER}
+      POSTGRES_PASSWORD: ${PG_DB_PASS}
+      POSTGRES_DB: default_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    ports:
+      - "${PG_PORT}:5432"
+
+  pgadmin:
+    image: dpage/pgadmin4:4.23
+    env_file:
+      - .env
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@pgadmin.com
+      PGADMIN_DEFAULT_PASSWORD: password
+      PGADMIN_LISTEN_PORT: 80
+    ports:
+      - ${PGADMIN_PORT}:80
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    restart: unless-stopped
+    depends_on:
+      - postgres
 
 volumes:
-  mongodata:
-  mysqldata:
+  mysql_data:
+  postgres_data: 
+  pgadmin_data:
